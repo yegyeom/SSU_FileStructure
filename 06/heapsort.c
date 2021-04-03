@@ -50,18 +50,12 @@ void writePage(FILE *fp, const char *pagebuf, int pagenum)
 //
 void buildHeap(FILE *inputfp, char **heaparray)
 {
-	int count, rn;
+	int count, rn, num, fsize;
 	long long sn1, sn2;
-	int num;
 	char pagebuf[PAGE_SIZE];
 	char tmprecord[RECORD_SIZE];
-	int fsize;
 	char check[4];
-	char test[RECORD_SIZE];
-	char tmp1[RECORD_SIZE];
-	char tmp2[RECORD_SIZE];
-	char temp[RECORD_SIZE];
-	char temp2[RECORD_SIZE];
+	char test[RECORD_SIZE], tmp1[RECORD_SIZE], tmp2[RECORD_SIZE], temp[RECORD_SIZE], temp2[RECORD_SIZE];
 	char *ptr1, *ptr2;
 	
 	for(int i = 0 ; i < recordnum ; i++){
@@ -70,6 +64,7 @@ void buildHeap(FILE *inputfp, char **heaparray)
 	
 	maxrecord = PAGE_SIZE/RECORD_SIZE;
 	num=0;
+
 	//배열에 레코드 삽입
 	for(int i = 1 ; i < pagenum ; i++){
 		count = 0;
@@ -78,6 +73,7 @@ void buildHeap(FILE *inputfp, char **heaparray)
 		while(count != maxrecord){
 			memset(check, 0, sizeof(check));
 			memcpy(check, pagebuf+RECORD_SIZE*count, 1);
+			
 			if(isdigit(*check)){
 				strncpy(heaparray[num], &pagebuf[RECORD_SIZE*count], RECORD_SIZE);
 				count++;
@@ -100,9 +96,7 @@ void buildHeap(FILE *inputfp, char **heaparray)
 void heapify(char **heaparray, int recordnum){
 	long long sn1, sn2;
 	char *ptr1, *ptr2;
-	char tmp1[RECORD_SIZE];
-	char tmp2[RECORD_SIZE];
-	char temp[RECORD_SIZE];
+	char tmp1[RECORD_SIZE], tmp2[RECORD_SIZE], temp[RECORD_SIZE];
 
 	for(int j = 1 ; j < recordnum ; j++){
 			int child = j;

@@ -66,7 +66,6 @@ void ftl_read(int lsn, char *sectorbuf)
 		fprintf(stderr, "lsn[%d] : data doesn't exist\n", lsn);
 	}
 	char c = 0xFF;
-//	char sector[SECTOR_SIZE];
 	char pagebuf[PAGE_SIZE];
 
 	memset(pagebuf, (char)0xFF, PAGE_SIZE);
@@ -77,19 +76,7 @@ void ftl_read(int lsn, char *sectorbuf)
 	}
 
 	memcpy(sectorbuf, pagebuf, SECTOR_SIZE);
-	/*
-	int j = 0;
-	for(int i = 0 ; i < SECTOR_SIZE ; i++){
-		if(sectorbuf[i] != c){
-			sector[j] = sectorbuf[i];
-			j++;
-		}
-	}
-
-	if(strlen(sector) > 0){
-		printf("%s\n", sector);
-	}
-*/
+	
 	return;
 }
 
@@ -104,6 +91,7 @@ void ftl_write(int lsn, char *sectorbuf)
 	char* tmp_sparebuf = (char*)malloc(SPARE_SIZE);
 	int psn = -1; 
 	int beforepsn, i;
+
 	if(DATAPAGES_PER_DEVICE < lsn){ //올바른 범위가 아닐 때
 		fprintf(stderr, "lsn not within range\n");
 		exit(1);
@@ -111,12 +99,14 @@ void ftl_write(int lsn, char *sectorbuf)
 
 	if(maptbl.entry[lsn].psn != -1){ //다른 freepage 찾기
 		beforepsn = maptbl.entry[lsn].psn;
+		
 		fseek(flashfp, PAGE_SIZE * i + SECTOR_SIZE, SEEK_SET);
 		fread(&data1, sizeof(SpareData), 1, flashfp);
+		
 		data1.is_invalid = 1; //동일 lsn인 데이터가 쓰이므로 is_invalid 값 1로 설정
 		data1.lpn = lsn;	
+		
 		memcpy(buf,&data1,SPARE_SIZE);
-
 		fseek(flashfp, PAGE_SIZE*beforepsn + SECTOR_SIZE, SEEK_SET);
 		fwrite(buf, sizeof(buf), 1, flashfp); //SpareData 구조체 메모리에 write
 	}
@@ -140,11 +130,15 @@ void ftl_write(int lsn, char *sectorbuf)
 		for(int j = 0 ; j < BLOCKS_PER_DEVICE*PAGES_PER_BLOCK ; j++){
 			fseek(flashfp, PAGE_SIZE * j + SECTOR_SIZE, SEEK_SET);
 			fread(&data1, sizeof(SpareData), 1, flashfp);
+
 			if(data1.is_invalid == 1){  // garbage collection 실행
-				int garbageblock = j / PAGES_PER_BLOCK; //is_invalid = 1 인 페이지가 존재하는 블럭 => garbage block
+				//is_invalid = 1 인 페이지가 존재하는 블럭 => garbage block
+				int garbageblock = j / PAGES_PER_BLOCK;
+				
 				for (int k = 0 ; k < PAGES_PER_BLOCK ; k++){			
 					fseek(flashfp, BLOCK_SIZE*garbageblock + PAGE_SIZE*k + SECTOR_SIZE, SEEK_SET); //garbage block의 모든 페이지
 					fread(&data1, sizeof(SpareData), 1, flashfp);
+					
 					if(data1.is_invalid == 0){ //garbagepage가 아니면
 						fseek(flashfp, BLOCK_SIZE*garbageblock + PAGE_SIZE*k, SEEK_SET); //PAGE_SIZE만큼 read하여
 						fread(gar_pagebuf, PAGE_SIZE, 1, flashfp);
@@ -154,9 +148,11 @@ void ftl_write(int lsn, char *sectorbuf)
 						maptbl.entry[data1.lpn].psn = free_blk*PAGES_PER_BLOCK + k; //매핑 테이블의 psn 갱신
 					}
 				}
+
 				for(int m = 0 ; m < PAGES_PER_BLOCK ; m++){ //옮겨간 블럭에서 (free block)
 					fseek(flashfp, BLOCK_SIZE*free_blk + PAGE_SIZE*m + SECTOR_SIZE, SEEK_SET);
 					fread(&data1, sizeof(SpareData), 1, flashfp);
+					
 					if(data1.is_invalid == -1){ //아무 데이터도 없는 page가 있으면 그 위치가 psn
 						psn = free_blk*PAGES_PER_BLOCK + m;
 						break;
@@ -165,11 +161,14 @@ void ftl_write(int lsn, char *sectorbuf)
 
 				free_blk = garbageblock; 
 				//garbage block 지우고 그 block이 새로운 free block이 됨
+				
 				if((ret = dd_erase(garbageblock)) < 0){ 
 					fprintf(stderr, "garbage block erase error\n");
 					exit(1);
 				}
+
 				break;
+
 			}
 		}
 	}

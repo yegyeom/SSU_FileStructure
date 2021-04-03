@@ -120,8 +120,7 @@ void unpack(const char *recordbuf, Person *p)
 //
 void insert(FILE *fp, const Person *p)
 {
-	char recordbuf[RECORD_SIZE];
-	char pagebuf[PAGE_SIZE];
+	char recordbuf[RECORD_SIZE], pagebuf[PAGE_SIZE];
 	int totalpage, totalrecord, lastpage, lastrecord;
 	int nextpage, nextrecord;
 	int maxrecord = PAGE_SIZE / RECORD_SIZE;
@@ -147,9 +146,11 @@ void insert(FILE *fp, const Person *p)
 		else { //2. 첫 저장은 아닌데 삭제 된 게 없을 때
 			memset(pagebuf, (char)0xFF, PAGE_SIZE);
 			readPage(fp, pagebuf, totalpage-1); //마지막 page read
+			
 			while(count!=maxrecord){
 				memset(check, 0, sizeof(check));
 				memcpy(check, pagebuf+RECORD_SIZE*count, 1); //첫 글자 읽고
+				
 				if(!isdigit(*check)){
 					memcpy(pagebuf+RECORD_SIZE*count, recordbuf, RECORD_SIZE);
 					writePage(fp, pagebuf, totalpage-1);
@@ -158,7 +159,9 @@ void insert(FILE *fp, const Person *p)
 				}
 				if(isdigit(*check))
 					count++;
+
 			}
+
 			if(count == maxrecord){ //마지막 페이지 꽉 찼으면
 				memset(pagebuf, (char)0xFF, PAGE_SIZE);
 				memcpy(pagebuf, recordbuf, RECORD_SIZE);
@@ -188,9 +191,7 @@ void insert(FILE *fp, const Person *p)
 //
 void delete(FILE *fp, const char *sn)
 {
-	int count = 1;
-	int check = 0;
-	int a;
+	int count = 1, check = 0, a;
 	char star = '*';
 	int totalpage, totalrecord, lastpage, lastrecord;
 	int maxrecord = PAGE_SIZE/RECORD_SIZE;
@@ -250,10 +251,7 @@ int main(int argc, char *argv[])
 	char inputsn[14];
 	char check[PAGE_SIZE];
 	char buffer[100] = {0,};
-	int num;
-	int num0=1;
-	int num1=0;
-	int num2=-1;
+	int num0=1, num1=0, num2=-1;
 	struct stat buf;
 	Person p;
 
@@ -271,7 +269,8 @@ int main(int argc, char *argv[])
 		strcpy(p.addr, argv[6]);
 		strcpy(p.phone, argv[7]);
 		strcpy(p.email, argv[8]);
-		//구조체에 정보 저장	
+		//구조체에 정보 저장
+
 		if(stat("person.dat", &buf) < 0){
 			fprintf(stderr, "stat error\n");
 			exit(1);
@@ -295,11 +294,13 @@ int main(int argc, char *argv[])
 		strcpy(inputsn, argv[3]); //삭제하고픈 레코드의 주민번호
 		delete(fp, inputsn);
 	}
+
 	fclose(fp);
+
 	return 1;
 }
 
-void modify_header(FILE *fp, int n_totalpage, int n_totalrecord, int n_lastpage, int n_lastrecord){ //header page 값 수정해주는 함수
+void modify_header(FILE *fp, int n_totalpage, int n_totalrecord, int n_lastpage, int n_lastrecord){ //header page 값 수정 함수
 	char header[PAGE_SIZE];
 	char n_header[PAGE_SIZE];
 	int totalpage, totalrecord, lastpage, lastrecord;
@@ -322,6 +323,7 @@ void modify_header(FILE *fp, int n_totalpage, int n_totalrecord, int n_lastpage,
 		lastpage = n_lastpage;
 		lastrecord = n_lastrecord;
 	}
+
 	//수정된 값으로 써줌
 	memcpy(n_header, &totalpage, sizeof(int));
 	memcpy(n_header+4, &totalrecord, sizeof(int));
